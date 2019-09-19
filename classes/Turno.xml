@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <byte-array-to-string-transformer name="Byte_Array_to_String" doc:name="Byte Array to String"/>
+    <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://192.168.15.7\\POS:1433;databaseName=db_ecoeficientes; user=luis;password=1234" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration"/>
+    <flow name="TurnoFlow">
+        <file:inbound-endpoint path="D:\ECOEFICIENTES\Turnos" pollingFrequency="5000" fileAge="5000" responseTimeout="10000" doc:name="File" moveToDirectory="D:\ECOEFICIENTES\BackT" moveToPattern="#[message.inboundProperties.originalFilename].BKP">
+            <file:filename-regex-filter pattern=".*txt" caseSensitive="true"/>
+        </file:inbound-endpoint>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[{call Ventas.sp_Ins_Tb_Turno
+(:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre)}]]></db:parameterized-query>
+            <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
+            <db:in-param name="@Tipo" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
+            <db:in-param name="@NDespachador" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
+            <db:in-param name="@LTSTotal" value="#[message.payloadAs(java.lang.String).toString().substring(20,26)]"/>
+            <db:in-param name="@ImporteTotal" value="#[message.payloadAs(java.lang.String).toString().substring(26,34)]"/>
+            <db:in-param name="@Inicio" value="#[message.payloadAs(java.lang.String).toString().substring(34,46)]"/>
+            <db:in-param name="@Fin" value="#[message.payloadAs(java.lang.String).toString().substring(46,58)]"/>
+            <db:in-param name="@NVentas" value="#[message.payloadAs(java.lang.String).toString().substring(58,62)]"/>
+            <db:in-param name="@NoUsado1" value="#[message.payloadAs(java.lang.String).toString().substring(62,70)]"/>
+            <db:in-param name="@NoUsado2" value="#[message.payloadAs(java.lang.String).toString().substring(70,78)]"/>
+            <db:in-param name="@NoUsado3" value="#[message.payloadAs(java.lang.String).toString().substring(78,86)]"/>
+            <db:in-param name="@InicioTotalizador" value="#[message.payloadAs(java.lang.String).toString().substring(86,95)]"/>
+            <db:in-param name="@FinalTotalizador" value="#[message.payloadAs(java.lang.String).toString().substring(95,104)]"/>
+            <db:in-param name="@InicioTicket" value="#[message.payloadAs(java.lang.String).toString().substring(104,117)]"/>
+            <db:in-param name="@FinalTicket" value="#[message.payloadAs(java.lang.String).toString().substring(117,130)]"/>
+            <db:in-param name="@LTSP1Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(130,136)]"/>
+            <db:in-param name="@ImporteP1Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(136,144)]"/>
+            <db:in-param name="@LTSP2Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(144,150)]"/>
+            <db:in-param name="@ImporteP2Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(150,158)]"/>
+            <db:in-param name="@LTSCilindro" value="#[message.payloadAs(java.lang.String).toString().substring(158,164)]"/>
+            <db:in-param name="@ImporteCilindro" value="#[message.payloadAs(java.lang.String).toString().substring(164,172)]"/>
+            <db:in-param name="@LTSP1Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(172,178)]"/>
+            <db:in-param name="@ImporteP1Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(178,186)]"/>
+            <db:in-param name="@LTSP2Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(186,192)]"/>
+            <db:in-param name="@ImporteP2Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(192,200)]"/>
+            <db:in-param name="@LTSCarburacion" value="#[message.payloadAs(java.lang.String).toString().substring(200,206)]"/>
+            <db:in-param name="@ImporteCarburacion" value="#[message.payloadAs(java.lang.String).toString().substring(206,214)]"/>
+            <db:in-param name="@PrecioP1" value="#[message.payloadAs(java.lang.String).toString().substring(214,220)]"/>
+            <db:in-param name="@PrecioP2" value="#[message.payloadAs(java.lang.String).toString().substring(220,226)]"/>
+            <db:in-param name="@Nombre" value="#[message.payloadAs(java.lang.String).toString().substring(226,252)]"/>
+        </db:stored-procedure>
+    </flow>
+</mule>

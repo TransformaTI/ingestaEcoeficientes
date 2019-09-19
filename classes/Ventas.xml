@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <flow name="VentasFlow">
+        <file:inbound-endpoint path="D:\ECOEFICIENTES\Ventas" moveToPattern="#[message.inboundProperties.originalFilename].BKP" moveToDirectory="D:\ECOEFICIENTES\BackV" pollingFrequency="5000" fileAge="5000" responseTimeout="10000" doc:name="File">
+            <file:filename-regex-filter pattern=".*txt" caseSensitive="true"/>
+        </file:inbound-endpoint>
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[{call Ventas.sp_Ins_Tb_Ticket
+(:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente)}]]></db:parameterized-query>
+            <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
+            <db:in-param name="@Tipo1" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
+            <db:in-param name="@NCliente" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
+            <db:in-param name="@Precio" value="#[message.payloadAs(java.lang.String).toString().substring(20,26)]"/>
+            <db:in-param name="@Litros" value="#[message.payloadAs(java.lang.String).toString().substring(26,32)]"/>
+            <db:in-param name="@Subtotal" value="#[message.payloadAs(java.lang.String).toString().substring(32,40)]"/>
+            <db:in-param name="@Iva" value="#[message.payloadAs(java.lang.String).toString().substring(40,48)]"/>
+            <db:in-param name="@Total" value="#[message.payloadAs(java.lang.String).toString().substring(48,56)]"/>
+            <db:in-param name="@InicioDespacho" value="#[message.payloadAs(java.lang.String).toString().substring(56,68)]"/>
+            <db:in-param name="@FinalDespacho" value="#[message.payloadAs(java.lang.String).toString().substring(68,80)]"/>
+            <db:in-param name="@NVentasTurno" value="#[message.payloadAs(java.lang.String).toString().substring(80,84)]"/>
+            <db:in-param name="@InicioTurno" value="#[message.payloadAs(java.lang.String).toString().substring(84,96)]"/>
+            <db:in-param name="@NOperador" value="#[message.payloadAs(java.lang.String).toString().substring(96,102)]"/>
+            <db:in-param name="@FormaPago" value="#[message.payloadAs(java.lang.String).toString().substring(102,104)]"/>
+            <db:in-param name="@NoUsado1" value="#[message.payloadAs(java.lang.String).toString().substring(104,106)]"/>
+            <db:in-param name="@Tipo2" value="#[message.payloadAs(java.lang.String).toString().substring(106,108)]"/>
+            <db:in-param name="@Factor" value="#[message.payloadAs(java.lang.String).toString().substring(108,111)]"/>
+            <db:in-param name="@NoUsado2" value="#[message.payloadAs(java.lang.String).toString().substring(111,113)]"/>
+            <db:in-param name="@NoUsado3" value="#[message.payloadAs(java.lang.String).toString().substring(113,145)]"/>
+            <db:in-param name="@NombreCliente" value="#[message.payloadAs(java.lang.String).toString().substring(145,180)]"/>
+        </db:stored-procedure>
+    </flow>
+</mule>
