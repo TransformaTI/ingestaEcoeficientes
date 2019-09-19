@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
     <byte-array-to-string-transformer name="Byte_Array_to_String" doc:name="Byte Array to String"/>
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://192.168.15.7\\POS:1433;databaseName=db_ecoeficientes; user=luis;password=1234" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration"/>
     <flow name="TurnoFlow">
-        <file:inbound-endpoint path="D:\ECOEFICIENTES\Turnos" pollingFrequency="5000" fileAge="5000" responseTimeout="10000" doc:name="File" moveToDirectory="D:\ECOEFICIENTES\BackT" moveToPattern="#[message.inboundProperties.originalFilename].BKP">
+        <file:inbound-endpoint path="C:\Ecoeficientes\Turnos" pollingFrequency="5000" fileAge="5000" responseTimeout="10000" doc:name="File" moveToDirectory="D:\ECOEFICIENTES\BackT" moveToPattern="#[message.inboundProperties.originalFilename].BKP">
             <file:filename-regex-filter pattern=".*txt" caseSensitive="true"/>
         </file:inbound-endpoint>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
