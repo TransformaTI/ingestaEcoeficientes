@@ -35,7 +35,7 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <logger message="========== Procesando archivo: #[payload.ruta]" level="INFO" doc:name="Logger"/>
                 <mulerequester:request resource="file:///#[payload.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
-                    <db:parameterized-query><![CDATA[{call Ventas.sp_Ins_Tb_Turno
+                    <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
 (:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion)}]]></db:parameterized-query>
                     <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
                     <db:in-param name="@Tipo" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
@@ -76,6 +76,7 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <logger message="========== No se encontraron archivos" level="INFO" doc:name="Logger"/>
             </otherwise>
         </choice>
+
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <logger message="&#161;&#161;&#161; HA OCURRIDO UN ERROR  EN FLUJO TURNOS !!!" level="INFO" doc:name="Logger"/>
         </catch-exception-strategy>
