@@ -17,7 +17,8 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
                 <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
-  where [ParametroBomba] = 'RutaVentaBomba']]></db:parameterized-query>
+  where [ParametroBomba] = 'RutaVentaBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
+
             </db:select>
         </poll>
         <logger message="~~~~~~~~~~INICIO FLUJO VENTAS~~~~~~~~~~" level="INFO" doc:name="Logger"/>
@@ -33,12 +34,12 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
                 <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
                 <set-payload value="#[message.payload]" doc:name="Set Payload"/>
-                <logger message="========== Procesando archivo: #[payload.ruta]" level="INFO" doc:name="Logger"/>
+                <logger message="========== Procesando archivo: #[payload.ruta] " level="INFO" doc:name="Logger"/>
                 <mulerequester:request resource="file:///#[payload.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
 
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
                     <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Ticket2
-(:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion)}]]></db:parameterized-query>
+(:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
                     <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
                     <db:in-param name="@Tipo1" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
                     <db:in-param name="@NCliente" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
@@ -60,11 +61,12 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
                     <db:in-param name="@NoUsado3" value="#[message.payloadAs(java.lang.String).toString().substring(113,145)]"/>
                     <db:in-param name="@NombreCliente" value="#[message.payloadAs(java.lang.String).toString().substring(145,180)]"/>
                     <db:in-param name="@IdEstacion" value="${db.station}"/>
+                    <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
 
 
                 </db:stored-procedure>
-                <file:outbound-endpoint path="${db.vbackup}" outputPattern="#[message.inboundProperties.originalFilename].BKP" responseTimeout="10000" doc:name="File"/>
-                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Logger"/>
+                <file:outbound-endpoint path="${db.vbackup}" outputPattern="#[message.inboundProperties.originalFilename]" responseTimeout="10000" doc:name="File"/>
+                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename] " level="INFO" doc:name="Logger"/>
             </when>
             
             <otherwise>
