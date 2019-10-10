@@ -33,40 +33,61 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
                 <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
                 <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
-                <set-payload value="#[message.payload]" doc:name="Set Payload"/>
-                <logger message="========== Procesando archivo: #[payload.ruta] " level="INFO" doc:name="Logger"/>
-                <mulerequester:request resource="file:///#[payload.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
+                <set-variable variableName="VRutaBase" value="#[message.payload]" doc:name="Variable"/>
 
+                <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta]" level="INFO" doc:name="Logger"/>
+                <mulerequester:request resource="file:///#[flowVars.VRutaBase.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
+                <set-variable variableName="Vcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable"/>
+                <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable"/>
+                <file:outbound-endpoint path="#[flowVars.Vpath]" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
-                    <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Ticket2
-(:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
-                    <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
-                    <db:in-param name="@Tipo1" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
-                    <db:in-param name="@NCliente" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
-                    <db:in-param name="@Precio" value="#[message.payloadAs(java.lang.String).toString().substring(20,26)]"/>
-                    <db:in-param name="@Litros" value="#[message.payloadAs(java.lang.String).toString().substring(26,32)]"/>
-                    <db:in-param name="@Subtotal" value="#[message.payloadAs(java.lang.String).toString().substring(32,40)]"/>
-                    <db:in-param name="@Iva" value="#[message.payloadAs(java.lang.String).toString().substring(40,48)]"/>
-                    <db:in-param name="@Total" value="#[message.payloadAs(java.lang.String).toString().substring(48,56)]"/>
-                    <db:in-param name="@InicioDespacho" value="#[message.payloadAs(java.lang.String).toString().substring(56,68)]"/>
-                    <db:in-param name="@FinalDespacho" value="#[message.payloadAs(java.lang.String).toString().substring(68,80)]"/>
-                    <db:in-param name="@NVentasTurno" value="#[message.payloadAs(java.lang.String).toString().substring(80,84)]"/>
-                    <db:in-param name="@InicioTurno" value="#[message.payloadAs(java.lang.String).toString().substring(84,96)]"/>
-                    <db:in-param name="@NOperador" value="#[message.payloadAs(java.lang.String).toString().substring(96,102)]"/>
-                    <db:in-param name="@FormaPago" value="#[message.payloadAs(java.lang.String).toString().substring(102,104)]"/>
-                    <db:in-param name="@NoUsado1" value="#[message.payloadAs(java.lang.String).toString().substring(104,106)]"/>
-                    <db:in-param name="@Tipo2" value="#[message.payloadAs(java.lang.String).toString().substring(106,108)]"/>
-                    <db:in-param name="@Factor" value="#[message.payloadAs(java.lang.String).toString().substring(108,111)]"/>
-                    <db:in-param name="@NoUsado2" value="#[message.payloadAs(java.lang.String).toString().substring(111,113)]"/>
-                    <db:in-param name="@NoUsado3" value="#[message.payloadAs(java.lang.String).toString().substring(113,145)]"/>
-                    <db:in-param name="@NombreCliente" value="#[message.payloadAs(java.lang.String).toString().substring(145,180)]"/>
-                    <db:in-param name="@IdEstacion" value="${db.station}"/>
-                    <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
-
-
+                    <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
+(:@Contenido)}]]></db:parameterized-query>
+                    <db:in-param name="@Contenido" value="#[flowVars.Vcontenido]"/>
                 </db:stored-procedure>
-                <file:outbound-endpoint path="${db.vbackup}" outputPattern="#[message.inboundProperties.originalFilename]" responseTimeout="10000" doc:name="File"/>
-                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename] " level="INFO" doc:name="Logger"/>
+                <logger message="mensaje con hash #[payload.resultSet1.get(0).hash]" level="INFO" doc:name="Logger"/>
+                <choice doc:name="Choice">
+                    <when expression="#[payload.resultSet1.get(0).hash==0]">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Ticket2
+(:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
+                            <db:in-param name="@IdTicket" value="#[flowVars.Vcontenido.toString().substring(0,13)]"/>
+                            <db:in-param name="@Tipo1" value="#[flowVars.Vcontenido.toString().substring(13,14)]"/>
+                            <db:in-param name="@NCliente" value="#[flowVars.Vcontenido.toString().substring(14,20)]"/>
+                            <db:in-param name="@Precio" value="#[flowVars.Vcontenido.toString().substring(20,26)]"/>
+                            <db:in-param name="@Litros" value="#[flowVars.Vcontenido.toString().substring(26,32)]"/>
+                            <db:in-param name="@Subtotal" value="#[flowVars.Vcontenido.toString().substring(32,40)]"/>
+                            <db:in-param name="@Iva" value="#[flowVars.Vcontenido.toString().substring(40,48)]"/>
+                            <db:in-param name="@Total" value="#[flowVars.Vcontenido.toString().substring(48,56)]"/>
+                            <db:in-param name="@InicioDespacho" value="#[flowVars.Vcontenido.toString().substring(56,68)]"/>
+                            <db:in-param name="@FinalDespacho" value="#[flowVars.Vcontenido.toString().substring(68,80)]"/>
+                            <db:in-param name="@NVentasTurno" value="#[flowVars.Vcontenido.toString().substring(80,84)]"/>
+                            <db:in-param name="@InicioTurno" value="#[flowVars.Vcontenido.toString().substring(84,96)]"/>
+                            <db:in-param name="@NOperador" value="#[flowVars.Vcontenido.toString().substring(96,102)]"/>
+                            <db:in-param name="@FormaPago" value="#[flowVars.Vcontenido.toString().substring(102,104)]"/>
+                            <db:in-param name="@NoUsado1" value="#[flowVars.Vcontenido.toString().substring(104,106)]"/>
+                            <db:in-param name="@Tipo2" value="#[flowVars.Vcontenido.toString().substring(106,108)]"/>
+                            <db:in-param name="@Factor" value="#[flowVars.Vcontenido.toString().substring(108,111)]"/>
+                            <db:in-param name="@NoUsado2" value="#[flowVars.Vcontenido.toString().substring(111,113)]"/>
+                            <db:in-param name="@NoUsado3" value="#[flowVars.Vcontenido.toString().substring(113,145)]"/>
+                            <db:in-param name="@NombreCliente" value="#[flowVars.Vcontenido.toString().substring(145,180)]"/>
+                            <db:in-param name="@IdEstacion" value="${db.station}"/>
+                            <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
+                        </db:stored-procedure>
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_Ins_ArchivoHash
+(:@Hash,:@Tipo,:@Nombre)}]]></db:parameterized-query>
+                            <db:in-param name="@Hash" value="#[flowVars.Vcontenido]"/>
+                            <db:in-param name="@Tipo" value="${db.TipoV}"/>
+                            <db:in-param name="@Nombre" value="#[flowVars.Vfilename]"/>
+                        </db:stored-procedure>
+                        <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename] " level="INFO" doc:name="Logger"/>
+                    </when>
+                    <otherwise>
+                        <logger message="EXISTE LA HUELLA VENTAS" level="INFO" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
+
             </when>
             
             <otherwise>

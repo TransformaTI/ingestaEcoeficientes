@@ -17,8 +17,8 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
   where [ParametroBomba] = 'RutaTurnoBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
-
             </db:select>
+
         </poll>
         <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Logger"/>
         <collection-splitter doc:name="Collection Splitter"/>
@@ -32,52 +32,76 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
                 <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
-                <set-payload value="#[message.payload]" doc:name="Set Payload"/>
-                <logger message="========== Procesando archivo: #[payload.ruta]" level="INFO" doc:name="Logger"/>
-                <mulerequester:request resource="file:///#[payload.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
+                <set-variable variableName="TRutaBase" value="#[message.payload]" doc:name="Variable"/>
+                <logger message="========== Procesando archivo: #[flowVars.TRutaBase.ruta]" level="INFO" doc:name="Logger"/>
+                <mulerequester:request resource="file:///#[flowVars.TRutaBase.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
+                <set-variable variableName="Tcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable"/>
+                <set-variable variableName="Tfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable"/>
+                <file:outbound-endpoint path="#[flowVars.Tpath]" outputPattern="#[flowVars.Tfilename]" responseTimeout="10000" doc:name="File"/>
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
-                    <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
-(:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
-                    <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
-                    <db:in-param name="@Tipo" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
-                    <db:in-param name="@NDespachador" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
-                    <db:in-param name="@LTSTotal" value="#[message.payloadAs(java.lang.String).toString().substring(20,26)]"/>
-                    <db:in-param name="@ImporteTotal" value="#[message.payloadAs(java.lang.String).toString().substring(26,34)]"/>
-                    <db:in-param name="@Inicio" value="#[message.payloadAs(java.lang.String).toString().substring(34,46)]"/>
-                    <db:in-param name="@Fin" value="#[message.payloadAs(java.lang.String).toString().substring(46,58)]"/>
-                    <db:in-param name="@NVentas" value="#[message.payloadAs(java.lang.String).toString().substring(58,62)]"/>
-                    <db:in-param name="@NoUsado1" value="#[message.payloadAs(java.lang.String).toString().substring(62,70)]"/>
-                    <db:in-param name="@NoUsado2" value="#[message.payloadAs(java.lang.String).toString().substring(70,78)]"/>
-                    <db:in-param name="@NoUsado3" value="#[message.payloadAs(java.lang.String).toString().substring(78,86)]"/>
-                    <db:in-param name="@InicioTotalizador" value="#[message.payloadAs(java.lang.String).toString().substring(86,95)]"/>
-                    <db:in-param name="@FinalTotalizador" value="#[message.payloadAs(java.lang.String).toString().substring(95,104)]"/>
-                    <db:in-param name="@InicioTicket" value="#[message.payloadAs(java.lang.String).toString().substring(104,117)]"/>
-                    <db:in-param name="@FinalTicket" value="#[message.payloadAs(java.lang.String).toString().substring(117,130)]"/>
-                    <db:in-param name="@LTSP1Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(130,136)]"/>
-                    <db:in-param name="@ImporteP1Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(136,144)]"/>
-                    <db:in-param name="@LTSP2Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(144,150)]"/>
-                    <db:in-param name="@ImporteP2Cilindro" value="#[message.payloadAs(java.lang.String).toString().substring(150,158)]"/>
-                    <db:in-param name="@LTSCilindro" value="#[message.payloadAs(java.lang.String).toString().substring(158,164)]"/>
-                    <db:in-param name="@ImporteCilindro" value="#[message.payloadAs(java.lang.String).toString().substring(164,172)]"/>
-                    <db:in-param name="@LTSP1Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(172,178)]"/>
-                    <db:in-param name="@ImporteP1Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(178,186)]"/>
-                    <db:in-param name="@LTSP2Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(186,192)]"/>
-                    <db:in-param name="@ImporteP2Carburacion" value="#[message.payloadAs(java.lang.String).toString().substring(192,200)]"/>
-                    <db:in-param name="@LTSCarburacion" value="#[message.payloadAs(java.lang.String).toString().substring(200,206)]"/>
-                    <db:in-param name="@ImporteCarburacion" value="#[message.payloadAs(java.lang.String).toString().substring(206,214)]"/>
-                    <db:in-param name="@PrecioP1" value="#[message.payloadAs(java.lang.String).toString().substring(214,220)]"/>
-                    <db:in-param name="@PrecioP2" value="#[message.payloadAs(java.lang.String).toString().substring(220,226)]"/>
-                    <db:in-param name="@Nombre" value="#[message.payloadAs(java.lang.String).toString().substring(226,252)]"/>
-                    <db:in-param name="@IdEstacion" value="${db.station}"/>
-                    <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
+                    <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
+(:@Contenido)}]]></db:parameterized-query>
+                    <db:in-param name="@Contenido" value="#[flowVars.Tcontenido]"/>
                 </db:stored-procedure>
-                <file:outbound-endpoint path="${db.tbackup}" outputPattern="#[message.inboundProperties.originalFilename].BKP" responseTimeout="10000" doc:name="File"/>
-                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Logger"/>
+                <logger message="mensaje con hash #[payload.resultSet1.get(0).hash]" level="INFO" doc:name="Logger"/>
+                <choice doc:name="Choice">
+                    <when expression="#[payload.resultSet1.get(0).hash==0]">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
+(:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
+                            <db:in-param name="@IdTicket" value="#[flowVars.Tcontenido.toString().substring(0,13)]"/>
+                            <db:in-param name="@Tipo" value="#[flowVars.Tcontenido.toString().substring(13,14)]"/>
+                            <db:in-param name="@NDespachador" value="#[flowVars.Tcontenido.toString().substring(14,20)]"/>
+                            <db:in-param name="@LTSTotal" value="#[flowVars.Tcontenido.toString().substring(20,26)]"/>
+                            <db:in-param name="@ImporteTotal" value="#[flowVars.Tcontenido.toString().substring(26,34)]"/>
+                            <db:in-param name="@Inicio" value="#[flowVars.Tcontenido.toString().substring(34,46)]"/>
+                            <db:in-param name="@Fin" value="#[flowVars.Tcontenido.toString().substring(46,58)]"/>
+                            <db:in-param name="@NVentas" value="#[flowVars.Tcontenido.toString().substring(58,62)]"/>
+                            <db:in-param name="@NoUsado1" value="#[flowVars.Tcontenido.toString().substring(62,70)]"/>
+                            <db:in-param name="@NoUsado2" value="#[flowVars.Tcontenido.toString().substring(70,78)]"/>
+                            <db:in-param name="@NoUsado3" value="#[flowVars.Tcontenido.toString().substring(78,86)]"/>
+                            <db:in-param name="@InicioTotalizador" value="#[flowVars.Tcontenido.toString().substring(86,95)]"/>
+                            <db:in-param name="@FinalTotalizador" value="#[flowVars.Tcontenido.toString().substring(95,104)]"/>
+                            <db:in-param name="@InicioTicket" value="#[flowVars.Tcontenido.toString().substring(104,117)]"/>
+                            <db:in-param name="@FinalTicket" value="#[flowVars.Tcontenido.toString().substring(117,130)]"/>
+                            <db:in-param name="@LTSP1Cilindro" value="#[flowVars.Tcontenido.toString().substring(130,136)]"/>
+                            <db:in-param name="@ImporteP1Cilindro" value="#[flowVars.Tcontenido.toString().substring(136,144)]"/>
+                            <db:in-param name="@LTSP2Cilindro" value="#[flowVars.Tcontenido.toString().substring(144,150)]"/>
+                            <db:in-param name="@ImporteP2Cilindro" value="#[flowVars.Tcontenido.toString().substring(150,158)]"/>
+                            <db:in-param name="@LTSCilindro" value="#[flowVars.Tcontenido.toString().substring(158,164)]"/>
+                            <db:in-param name="@ImporteCilindro" value="#[flowVars.Tcontenido.toString().substring(164,172)]"/>
+                            <db:in-param name="@LTSP1Carburacion" value="#[flowVars.Tcontenido.toString().substring(172,178)]"/>
+                            <db:in-param name="@ImporteP1Carburacion" value="#[flowVars.Tcontenido.toString().substring(178,186)]"/>
+                            <db:in-param name="@LTSP2Carburacion" value="#[flowVars.Tcontenido.toString().substring(186,192)]"/>
+                            <db:in-param name="@ImporteP2Carburacion" value="#[flowVars.Tcontenido.toString().substring(192,200)]"/>
+                            <db:in-param name="@LTSCarburacion" value="#[flowVars.Tcontenido.toString().substring(200,206)]"/>
+                            <db:in-param name="@ImporteCarburacion" value="#[flowVars.Tcontenido.toString().substring(206,214)]"/>
+                            <db:in-param name="@PrecioP1" value="#[flowVars.Tcontenido.toString().substring(214,220)]"/>
+                            <db:in-param name="@PrecioP2" value="#[flowVars.Tcontenido.toString().substring(220,226)]"/>
+                            <db:in-param name="@Nombre" value="#[flowVars.Tcontenido.toString().substring(226,252)]"/>
+                            <db:in-param name="@IdEstacion" value="${db.station}"/>
+                            <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
+                        </db:stored-procedure>
+                                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_Ins_ArchivoHash
+(:@Hash,:@Tipo,:@Nombre)}]]></db:parameterized-query>
+                            <db:in-param name="@Hash" value="#[flowVars.Tcontenido.toString()]"/>
+                            <db:in-param name="@Tipo" value="${db.TipoT}"/>
+                            <db:in-param name="@Nombre" value="#[flowVars.Tfilename.toString()]"/>
+
+                        </db:stored-procedure>
+                        <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Logger"/>
+                    </when>
+                    <otherwise>
+                        <logger message="EXISTE LA HUELLA TURNOS" level="INFO" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
             </when>
             <otherwise>
                 <logger message="========== No se encontraron archivos" level="INFO" doc:name="Logger"/>
             </otherwise>
         </choice>
+
 
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <logger message="&#161;&#161;&#161; HA OCURRIDO UN ERROR  EN FLUJO TURNOS !!!" level="INFO" doc:name="Logger"/>
