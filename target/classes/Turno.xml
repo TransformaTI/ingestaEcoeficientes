@@ -16,7 +16,8 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
-  where [ParametroBomba] = 'RutaTurnoBomba']]></db:parameterized-query>
+  where [ParametroBomba] = 'RutaTurnoBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
+
             </db:select>
         </poll>
         <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Logger"/>
@@ -36,7 +37,7 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <mulerequester:request resource="file:///#[payload.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
                     <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
-(:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion)}]]></db:parameterized-query>
+(:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
                     <db:in-param name="@IdTicket" value="#[message.payloadAs(java.lang.String).toString().substring(0,13)]"/>
                     <db:in-param name="@Tipo" value="#[message.payloadAs(java.lang.String).toString().substring(13,14)]"/>
                     <db:in-param name="@NDespachador" value="#[message.payloadAs(java.lang.String).toString().substring(14,20)]"/>
@@ -68,6 +69,7 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                     <db:in-param name="@PrecioP2" value="#[message.payloadAs(java.lang.String).toString().substring(220,226)]"/>
                     <db:in-param name="@Nombre" value="#[message.payloadAs(java.lang.String).toString().substring(226,252)]"/>
                     <db:in-param name="@IdEstacion" value="${db.station}"/>
+                    <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
                 </db:stored-procedure>
                 <file:outbound-endpoint path="${db.tbackup}" outputPattern="#[message.inboundProperties.originalFilename].BKP" responseTimeout="10000" doc:name="File"/>
                 <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Logger"/>
