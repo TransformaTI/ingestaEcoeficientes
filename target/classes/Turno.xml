@@ -10,16 +10,13 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://${db.server}:${db.port};databaseName=${db.databasename}; user=${db.username};password=${db.password}" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration"/>
     <flow name="TurnoFlow">
-        <poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="15000" startDelay="10000"/>
-            <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
-                <db:parameterized-query><![CDATA[SELECT
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
   where [ParametroBomba] = 'RutaTurnoBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
-            </db:select>
+        </db:select>
 
-        </poll>
         <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Logger"/>
         <collection-splitter doc:name="Collection Splitter"/>
         <set-variable variableName="Tpath" value="#[payload.ValorParametroBomba]" doc:name="Variable"/>
@@ -43,9 +40,9 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
 (:@Contenido)}]]></db:parameterized-query>
                     <db:in-param name="@Contenido" value="#[flowVars.Tcontenido]"/>
                 </db:stored-procedure>
-                <logger message="mensaje con hash #[payload.resultSet1.get(0).hash]" level="INFO" doc:name="Logger"/>
+                <set-variable variableName="ValorRegresoT" value="#[payload.resultSet1.get(0).hash]" doc:name="Variable"/>
                 <choice doc:name="Choice">
-                    <when expression="#[payload.resultSet1.get(0).hash==0]">
+                    <when expression="#[flowVars.ValorRegresoT==0]">
                         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
 (:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>

@@ -11,16 +11,13 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
     <context:property-placeholder location="db-Config.properties"/>
     <flow name="VentasFlow">
-        <poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="10000" startDelay="5000"/>
-            <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
-                <db:parameterized-query><![CDATA[SELECT
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
   where [ParametroBomba] = 'RutaVentaBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
+        </db:select>
 
-            </db:select>
-        </poll>
         <logger message="~~~~~~~~~~INICIO FLUJO VENTAS~~~~~~~~~~" level="INFO" doc:name="Logger"/>
         <collection-splitter doc:name="Collection Splitter"/>
         <set-variable variableName="Vpath" value="#[payload.ValorParametroBomba]" doc:name="Variable"/>
@@ -45,9 +42,9 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
 (:@Contenido)}]]></db:parameterized-query>
                     <db:in-param name="@Contenido" value="#[flowVars.Vcontenido]"/>
                 </db:stored-procedure>
-                <logger message="mensaje con hash #[payload.resultSet1.get(0).hash]" level="INFO" doc:name="Logger"/>
+                <set-variable variableName="ValorRegreso" value="#[payload.resultSet1.get(0).hash]" doc:name="Variable"/>
                 <choice doc:name="Choice">
-                    <when expression="#[payload.resultSet1.get(0).hash==0]">
+                    <when expression="#[flowVars.ValorRegreso==0]">
                         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Ticket2
 (:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
