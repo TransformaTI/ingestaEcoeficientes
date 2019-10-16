@@ -6,20 +6,23 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
-    <flow name="maestroFlow">
+    <flow name="maestroFlow" processingStrategy="synchronous">
         <poll doc:name="Poll">
             <fixed-frequency-scheduler frequency="45" timeUnit="MINUTES"/>
-            <logger message="INICIA PROCESO-----------------------" level="INFO" doc:name="Logger"/>
+            <logger message="INICIA PROCESO MAESTRO-----------------------" level="INFO" doc:name="Logger"/>
         </poll>
-        <flow-ref name="VentasFlow" doc:name="Ventas Flow"/>
         <flow-ref name="TurnoFlow" doc:name="TurnoFlow"/>
+        <flow-ref name="VentasFlow" doc:name="Ventas Flow"/>
+        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Upd_Staging">
+            <db:parameterized-query><![CDATA[{call [dbo].[sp_Upd_Staging]}]]></db:parameterized-query>
+        </db:stored-procedure>
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Actualizar Turnos">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_INS_TurnoStagingTurno]}]]></db:parameterized-query>
         </db:stored-procedure>
-        <logger message="SE ACTUALIZO TURNOS" level="INFO" doc:name="Logger"/>
+        <logger message="SE ACTUALIZO TURNOS" level="INFO" doc:name="Actualiz&#243; turnos"/>
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Actualiza Ventas">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_INS_TicketStagingTicket]}]]></db:parameterized-query>
         </db:stored-procedure>
-        <logger message="SE ACTUALIZO VENTAS" level="INFO" doc:name="Logger"/>
+        <logger message="SE ACTUALIZO VENTAS" level="INFO" doc:name="Actualiz&#243; ventas"/>
     </flow>
 </mule>
