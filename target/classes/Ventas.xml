@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:context="http://www.springframework.org/schema/context" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -8,44 +8,54 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd
-http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
     <context:property-placeholder location="db-Config.properties"/>
-    <flow name="VentasFlow">
-        <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
+    <flow name="VentasFlow" initialState="started">
+        <logger message="~~~~~~~~~~INICIO FLUJO VENTAS~~~~~~~~~~" level="INFO" doc:name="Inicio de flujo"/>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="BombaParametro">
             <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
   where [ParametroBomba] = 'RutaVentaBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
         </db:select>
-
-        <logger message="~~~~~~~~~~INICIO FLUJO VENTAS~~~~~~~~~~" level="INFO" doc:name="Logger"/>
-        <collection-splitter doc:name="Collection Splitter"/>
-        <set-variable variableName="Vpath" value="#[payload.ValorParametroBomba]" doc:name="Variable"/>
+        <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
+        <collection-splitter doc:name="Splitter"/>
+        <set-variable variableName="Vpath" value="#[payload.ValorParametroBomba]" doc:name="Variable Vpath"/>
         <logger message="========== Analizando Ruta: #[flowVars.Vpath]" level="INFO" doc:name="Logger"/>
-        <set-variable variableName="Varchivo" value="#[org.mule.util.FileUtils.listFiles(new java.io.File(flowVars.Vpath.toString()),null,false)]" doc:name="Variable" />
+        <set-variable variableName="Varchivo" value="#[org.mule.util.FileUtils.listFiles(new java.io.File(flowVars.Vpath.toString()),null,false)]" doc:name="Variable Varchivo" />
         <choice doc:name="Choice">
             <when expression="#[flowVars.Varchivo.toString() != &quot;[]&quot;]">
-                <set-variable variableName="Vjson" value="#[flowVars.Varchivo.toString().replace('[','[{&quot;ruta&quot;:&quot;').replace(', ','&quot;},{&quot;ruta&quot;:&quot;').replace(']','&quot;}]')]" mimeType="text/json" doc:name="Variable"/>
+                <set-variable variableName="Vjson" value="#[flowVars.Varchivo.toString().replace('[','[{&quot;ruta&quot;:&quot;').replace(', ','&quot;},{&quot;ruta&quot;:&quot;').replace(']','&quot;}]')]" mimeType="text/json" doc:name="Variable Vjson"/>
                 <set-payload value="#[flowVars.Vjson.toString().replace('\\','/')]" doc:name="Set Payload" mimeType="text/json"/>
                 <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
                 <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
-                <set-variable variableName="VRutaBase" value="#[message.payload]" doc:name="Variable"/>
+                <set-variable variableName="VRutaBase" value="#[message.payload]" doc:name="Variable VRutaBase"/>
 
                 <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta]" level="INFO" doc:name="Logger"/>
                 <mulerequester:request resource="file:///#[flowVars.VRutaBase.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
-                <set-variable variableName="Vcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable"/>
-                <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable"/>
+                <set-variable variableName="Vcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable Vcontenido"/>
+                <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Vfilename"/>
                 <file:outbound-endpoint path="#[flowVars.Vpath]" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
-                <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
-                    <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
+                <choice doc:name="Validar layout">
+                    <when expression="#[flowVars.Vcontenido.toString().length()==180]">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
 (:@Contenido)}]]></db:parameterized-query>
-                    <db:in-param name="@Contenido" value="#[flowVars.Vcontenido]"/>
-                </db:stored-procedure>
+                            <db:in-param name="@Contenido" value="#[flowVars.Vcontenido]"/>
+                        </db:stored-procedure>
+                    </when>
+                    <otherwise>
+                        <scripting:component doc:name="Groovy Exception">
+                            <scripting:script engine="Groovy"><![CDATA[throw new IllegalArgumentException('Layout de ventas no se cumple')]]></scripting:script>
+                        </scripting:component>
+                    </otherwise>
+                </choice>
                 <set-variable variableName="ValorRegreso" value="#[payload.resultSet1.get(0).hash]" doc:name="Variable"/>
                 <choice doc:name="Choice">
                     <when expression="#[flowVars.ValorRegreso==0]">
-                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Ins_Tb_Ticket2">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Ticket2
 (:@IdTicket,:@Tipo1,:@NCliente,:@Precio,:@Litros,:@Subtotal,:@Iva,:@Total,:@InicioDespacho,:@FinalDespacho,:@NVentasTurno,:@InicioTurno,:@NOperador,:@FormaPago,:@NoUsado1,:@Tipo2,:@Factor,:@NoUsado2,:@NoUsado3,:@NombreCliente,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
                             <db:in-param name="@IdTicket" value="#[flowVars.Vcontenido.toString().substring(0,13)]"/>
@@ -71,7 +81,7 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
                             <db:in-param name="@IdEstacion" value="${db.station}"/>
                             <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
                         </db:stored-procedure>
-                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Ins_ArchivoHash">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_ArchivoHash
 (:@Hash,:@Tipo,:@Nombre)}]]></db:parameterized-query>
                             <db:in-param name="@Hash" value="#[flowVars.Vcontenido]"/>
@@ -93,7 +103,7 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
         </choice>
 
         <catch-exception-strategy doc:name="VentasCatch_Exception_Strategy">
-            <logger message="&#161;&#161;&#161; HA OCURRIDO UN ERROR  EN FLUJO VENTAS !!!" level="INFO" doc:name="Logger"/>
+            <logger message="&#161;&#161;&#161; HA OCURRIDO UN ERROR  EN FLUJO VENTAS !!!" level="INFO" doc:name="Error logger"/>
         </catch-exception-strategy>
     </flow>
 </mule>

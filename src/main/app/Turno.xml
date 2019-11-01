@@ -9,41 +9,48 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://${db.server}:${db.port};databaseName=${db.databasename}; user=${db.username};password=${db.password}" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration"/>
-    <flow name="TurnoFlow">
-        <db:select config-ref="Generic_Database_Configuration" doc:name="Database">
+    <flow name="TurnoFlow" initialState="started">
+        <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Inicia flujo"/>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Bomba parametro">
             <db:parameterized-query><![CDATA[SELECT
 [ValorParametroBomba]
   FROM [Catalogos].[BombaParametro]
   where [ParametroBomba] = 'RutaTurnoBomba' and IdEstacion=${db.station}]]></db:parameterized-query>
         </db:select>
-
-        <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Logger"/>
-        <collection-splitter doc:name="Collection Splitter"/>
-        <set-variable variableName="Tpath" value="#[payload.ValorParametroBomba]" doc:name="Variable"/>
-        <logger message="========== Analizando Ruta: #[flowVars.Tpath]" level="INFO" doc:name="Logger"/>
-        <set-variable variableName="Tarchivo" value="#[org.mule.util.FileUtils.listFiles(new java.io.File(flowVars.Tpath.toString()),null,false)]" doc:name="Variable"/>
+        <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
+        <collection-splitter doc:name="Splitter"/>
+        <set-variable variableName="Tpath" value="#[payload.ValorParametroBomba]" doc:name="Variable Tpath"/>
+        <logger message="========== Analizando Ruta: #[flowVars.Tpath]" level="INFO" doc:name="Analizando ruta"/>
+        <set-variable variableName="Tarchivo" value="#[org.mule.util.FileUtils.listFiles(new java.io.File(flowVars.Tpath.toString()),null,false)]" doc:name="Variable Tarchivo"/>
         <choice doc:name="Choice">
             <when expression="#[flowVars.Tarchivo.toString() != &quot;[]&quot;]">
-                <set-variable variableName="Tjson" value="#[flowVars.Tarchivo.toString().replace('[','[{&quot;ruta&quot;:&quot;').replace(', ','&quot;},{&quot;ruta&quot;:&quot;').replace(']','&quot;}]')]" mimeType="text/json" doc:name="Variable"/>
+                <set-variable variableName="Tjson" value="#[flowVars.Tarchivo.toString().replace('[','[{&quot;ruta&quot;:&quot;').replace(', ','&quot;},{&quot;ruta&quot;:&quot;').replace(']','&quot;}]')]" mimeType="text/json" doc:name="Variable Tjson"/>
                 <set-payload value="#[flowVars.Tjson.toString().replace('\\','/')]" doc:name="Set Payload"/>
                 <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
-                <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
+                <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Archivos"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
-                <set-variable variableName="TRutaBase" value="#[message.payload]" doc:name="Variable"/>
-                <logger message="========== Procesando archivo: #[flowVars.TRutaBase.ruta]" level="INFO" doc:name="Logger"/>
+                <set-variable variableName="TRutaBase" value="#[message.payload]" doc:name="Variable TRutaBase"/>
+                <logger message="========== Procesando archivo: #[flowVars.TRutaBase.ruta]" level="INFO" doc:name="Procesando archivo"/>
                 <mulerequester:request resource="file:///#[flowVars.TRutaBase.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
-                <set-variable variableName="Tcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable"/>
-                <set-variable variableName="Tfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable"/>
+                <set-variable variableName="Tcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable Tcontenido"/>
+                <set-variable variableName="Tfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Tfilename"/>
                 <file:outbound-endpoint path="#[flowVars.Tpath]" outputPattern="#[flowVars.Tfilename]" responseTimeout="10000" doc:name="File"/>
-                <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
-                    <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
+                <choice doc:name="Choice">
+                    <when expression="#[flowVars.Tcontenido.length == 180]">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
+                            <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
 (:@Contenido)}]]></db:parameterized-query>
-                    <db:in-param name="@Contenido" value="#[flowVars.Tcontenido]"/>
-                </db:stored-procedure>
-                <set-variable variableName="ValorRegresoT" value="#[payload.resultSet1.get(0).hash]" doc:name="Variable"/>
+                            <db:in-param name="@Contenido" value="#[flowVars.Tcontenido]"/>
+                        </db:stored-procedure>
+                    </when>
+                    <otherwise>
+                        <logger level="INFO" doc:name="Layout incorrecto" doc:description="El layout del archivo de ventas a 180 caracteres no se cumple"/>
+                    </otherwise>
+                </choice>
+                <set-variable variableName="ValorRegresoT" value="#[payload.resultSet1.get(0).hash]" doc:name="Variable ValorRegresoT"/>
                 <choice doc:name="Choice">
                     <when expression="#[flowVars.ValorRegresoT==0]">
-                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                        <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Ins_Tb_Turno2">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_Tb_Turno2
 (:@IdTicket,:@Tipo,:@NDespachador,:@LTSTotal,:@ImporteTotal,:@Inicio,:@Fin,:@NVentas,:@NoUsado1,:@NoUsado2,:@NoUsado3,:@InicioTotalizador,:@FinalTotalizador,:@InicioTicket,:@FinalTicket,:@LTSP1Cilindro,:@ImporteP1Cilindro,:@LTSP2Cilindro,:@ImporteP2Cilindro,:@LTSCilindro,:@ImporteCilindro,:@LTSP1Carburacion,:@ImporteP1Carburacion,:@LTSP2Carburacion,:@ImporteP2Carburacion,:@LTSCarburacion,:@ImporteCarburacion,:@PrecioP1,:@PrecioP2,:@Nombre,:@IdEstacion,:@IdEmpresa)}]]></db:parameterized-query>
                             <db:in-param name="@IdTicket" value="#[flowVars.Tcontenido.toString().substring(0,13)]"/>
@@ -79,7 +86,7 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                             <db:in-param name="@IdEstacion" value="${db.station}"/>
                             <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
                         </db:stored-procedure>
-                                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Database">
+                                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Ins_ArchivoHash">
                             <db:parameterized-query><![CDATA[{call dbo.sp_Ins_ArchivoHash
 (:@Hash,:@Tipo,:@Nombre)}]]></db:parameterized-query>
                             <db:in-param name="@Hash" value="#[flowVars.Tcontenido.toString()]"/>
@@ -87,21 +94,21 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                             <db:in-param name="@Nombre" value="#[flowVars.Tfilename.toString()]"/>
 
                         </db:stored-procedure>
-                        <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Logger"/>
+                        <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Archivo procesado"/>
                     </when>
                     <otherwise>
-                        <logger message="EXISTE LA HUELLA TURNOS" level="INFO" doc:name="Logger"/>
+                        <logger message="EXISTE LA HUELLA TURNOS" level="INFO" doc:name="Huella existe"/>
                     </otherwise>
                 </choice>
             </when>
             <otherwise>
-                <logger message="========== No se encontraron archivos" level="INFO" doc:name="Logger"/>
+                <logger message="========== No se encontraron archivos" level="INFO" doc:name="No hay archivos pendientes"/>
             </otherwise>
         </choice>
 
 
         <catch-exception-strategy doc:name="Catch Exception Strategy">
-            <logger message="&#161;&#161;&#161; HA OCURRIDO UN ERROR  EN FLUJO TURNOS !!!" level="INFO" doc:name="Logger"/>
+            <logger  level="INFO" doc:name="Logger error" message="Error en proceso de carga de turnos"/>
         </catch-exception-strategy>
 
     </flow>
