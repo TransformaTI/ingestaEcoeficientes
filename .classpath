@@ -10,7 +10,8 @@
 	<classpathentry kind="src" path="src/main/api"/>
 	<classpathentry kind="src" path="src/main/wsdl"/>
 	<classpathentry kind="src" path="src/test/munit"/>
-	<classpathentry kind="lib" path="C:/Users/Diego/Downloads/Anypointstudio jar/mssql-jdbc-7.2.2.jre8.jar"/>
+	<classpathentry kind="lib" path="D:/Proyectos/Ecoeficientes/sqljdbc_7.2.2.0_enu/sqljdbc_7.2/enu/mssql-jdbc-7.2.2.jre8.jar"/>
 	<classpathentry kind="con" path="MULE_LIB/Mule Requester/org.mule.tooling.ui.contribution.mulerequester.3.5.0"/>
+	<classpathentry kind="lib" path="D:/sqljdbc4.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
