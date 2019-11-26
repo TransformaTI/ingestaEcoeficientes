@@ -22,22 +22,22 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
         <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
         <collection-splitter doc:name="Splitter"/>
         <set-variable variableName="Vpath" value="#[payload.ValorParametroBomba]" doc:name="Variable Vpath"/>
-        <logger message="========== Analizando Ruta: #[flowVars.Vpath]" level="INFO" doc:name="Logger"/>
+        <logger message="========== Analizando Ruta: #[flowVars.Vpath]" level="INFO" doc:name="Anizando ruta"/>
         <set-variable variableName="Varchivo" value="#[org.mule.util.FileUtils.listFiles(new java.io.File(flowVars.Vpath.toString()),null,false)]" doc:name="Variable Varchivo" />
         <choice doc:name="Choice">
             <when expression="#[flowVars.Varchivo.toString() != &quot;[]&quot;]">
                 <set-variable variableName="Vjson" value="#[flowVars.Varchivo.toString().replace('[','[{&quot;ruta&quot;:&quot;').replace(', ','&quot;},{&quot;ruta&quot;:&quot;').replace(']','&quot;}]')]" mimeType="text/json" doc:name="Variable Vjson"/>
                 <set-payload value="#[flowVars.Vjson.toString().replace('\\','/')]" mimeType="text/json" doc:name="Set Payload"/>
                 <json:json-to-object-transformer returnClass="java.util.List" doc:name="JSON to Object"/>
-                <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Logger"/>
+                <logger message="========== ARCHIVOS: #[message.payload]" level="INFO" doc:name="Nombre archivo"/>
                 <splitter expression="#[message.payload]" doc:name="Splitter"/>
                 <set-variable variableName="VRutaBase" value="#[message.payload]" doc:name="Variable VRutaBase"/>
-                <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta]" level="INFO" doc:name="Logger"/>
+                <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta]" level="INFO" doc:name="Procesando"/>
                 <mulerequester:request resource="file:///#[flowVars.VRutaBase.ruta]" returnClass="java.lang.String" doc:name="Mule Requester"/>
                 <set-variable variableName="Vcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable Vcontenido"/>
                 <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Vfilename"/>
                 <choice doc:name="Validar layout">
-                    <when expression="#[flowVars.Vcontenido.toString().length()==180]">
+                    <when expression="#[flowVars.Vcontenido.toString().length()&gt;=170]">
                         <file:outbound-endpoint path="#[flowVars.Vpath]" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
                         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
                             <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
@@ -80,21 +80,21 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                                     <db:in-param name="@Tipo" value="${db.TipoV}"/>
                                     <db:in-param name="@Nombre" value="#[flowVars.Vfilename]"/>
                                 </db:stored-procedure>
-                                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename] " level="INFO" doc:name="Logger"/>
+                                <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename] " level="INFO" doc:name="Archivo procesado"/>
                             </when>
                             <otherwise>
-                                <logger message="EXISTE LA HUELLA VENTAS" level="INFO" doc:name="Logger"/>
+                                <logger message="EXISTE LA HUELLA VENTAS" level="INFO" doc:name="Archivo procesado antes"/>
                             </otherwise>
                         </choice>
                     </when>
                     <otherwise>
-                        <file:outbound-endpoint path="${db.FileEx}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
-                        <logger message="ERROR EN EL ARCHIVO : #[flowVars.Vfilename]" level="ERROR" doc:name="Logger"/>
+                        <file:outbound-endpoint path="${db.FileEx}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="Mueve archivo defectuoso"/>
+                        <logger message="ERROR EN EL ARCHIVO : #[flowVars.Vfilename]" level="ERROR" doc:name="Error LayoutVtas"/>
                     </otherwise>
                 </choice>
             </when>
             <otherwise>
-                <logger message="========== No se encontraron archivos" level="INFO" doc:name="Logger"/>
+                <logger message="========== No se encontraron archivos" level="INFO" doc:name="No hay ventas"/>
             </otherwise>
         </choice>
 
