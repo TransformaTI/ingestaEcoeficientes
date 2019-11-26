@@ -9,7 +9,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
     <flow name="maestroFlow" processingStrategy="synchronous" initialState="started">
         <poll doc:name="Poll">
             <fixed-frequency-scheduler frequency="10" timeUnit="MINUTES"/>
-            <logger message="INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
+            <logger message="INGESTOR 3700 VER. 2.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
         </poll>
         <flow-ref name="TurnoFlow" doc:name="TurnoFlow"/>
         <flow-ref name="VentasFlow" doc:name="Ventas Flow"/>
