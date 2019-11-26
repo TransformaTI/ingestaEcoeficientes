@@ -8,7 +8,7 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
     <flow name="maestroFlow" processingStrategy="synchronous" initialState="started">
         <poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="10" timeUnit="MINUTES"/>
+            <fixed-frequency-scheduler frequency="1" timeUnit="MINUTES" startDelay="1"/>
             <logger message="INGESTOR 3700 VER. 2.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
         </poll>
         <flow-ref name="TurnoFlow" doc:name="TurnoFlow"/>
@@ -23,7 +23,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Actualiza Ventas">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_INS_TicketStagingTicket]}]]></db:parameterized-query>
         </db:stored-procedure>
-        <logger message="SE ACTUALIZO VENTAS" level="INFO" doc:name="Actualiz&#243; ventas"/>
+        <logger message="SE ACTUALIZO VENTAS VER. 2.0" level="INFO" doc:name="Actualiz&#243; ventas"/>
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <logger message="ERROR EN EL PROCESO DE MAESTRO" level="ERROR" doc:name="Error Logger"/>
         </catch-exception-strategy>
