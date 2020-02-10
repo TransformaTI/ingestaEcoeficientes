@@ -39,7 +39,16 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                 <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta] LONGITUD: #[flowVars.VLongitudLayout]" level="INFO" doc:name="Procesando"/>
                 <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Vfilename"/>
                 <choice doc:name="Validar layout">
-                    <when expression="#[flowVars.Vcontenido.toString().length()&gt;=145]">
+                    <when expression="#[flowVars.Vcontenido.toString().length()&gt;=182]">
+                        <file:outbound-endpoint path="${db.FileCaracteres}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Caracteres Distintos"/>
+                        <logger message="El archivo #[flowVars.Vfilename] tiene longitud mayor a la esperada" level="INFO" doc:name="Logger"/>
+
+                    </when>
+                    <when expression="#[flowVars.Vcontenido.toString().length()==0]">
+                        <file:outbound-endpoint path="${db.FileVacio}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Archivo vacio"/>
+                        <logger message="----- SE ENCONTRO ARCHIVO VACIO-------- #[flowVars.Vfilename]" level="INFO" doc:name="Archivo vacio"/>
+                    </when>
+                    <when expression="#[flowVars.Vcontenido.toString().length()&gt;=145 &amp;&amp; flowVars.Vcontenido.toString().length()&lt;=181]">
                         <file:outbound-endpoint path="#[flowVars.Vpath]" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
                         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
                             <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
@@ -74,7 +83,6 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                                     <db:in-param name="@NombreCliente" type="VARCHAR" value="#[flowVars.Vcontenido.toString().substring(145,Integer.parseInt(flowVars.VLongitudLayout.trim()))]"/>
                                     <db:in-param name="@IdEstacion" value="${db.station}"/>
                                     <db:in-param name="@IdEmpresa" value="${db.empresa}"/>
-
                                 </db:stored-procedure>
                                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Ins_ArchivoHash">
                                     <db:parameterized-query><![CDATA[{call dbo.sp_Ins_ArchivoHash
