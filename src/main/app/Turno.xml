@@ -8,7 +8,9 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
-    <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://${db.server}:${db.port};databaseName=${db.databasename}; user=${db.username};password=${db.password}" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration"/>
+    <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://${db.server}:${db.port};databaseName=${db.databasename}; user=${db.username};password=${db.password}" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration">
+        <reconnect-forever frequency="30000"/>
+    </db:generic-config>
     <flow name="TurnoFlow" initialState="started">
         <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Inicia flujo"/>
         <db:select config-ref="Generic_Database_Configuration" doc:name="Bomba parametro">

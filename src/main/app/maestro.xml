@@ -8,14 +8,56 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
     <flow name="maestroFlow" processingStrategy="synchronous" initialState="started">
         <poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="1" timeUnit="MINUTES" startDelay="1"/>
-            <logger message="INGESTOR 3700 VER. 2.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
+            <fixed-frequency-scheduler frequency="1" timeUnit="SECONDS" startDelay="6"/>
+            <logger message="INGESTOR 3700 VER. 3.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
         </poll>
         <flow-ref name="TurnoFlow" doc:name="TurnoFlow"/>
         <flow-ref name="VentasFlow" doc:name="Ventas Flow"/>
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_Upd_Staging">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_Upd_Staging]}]]></db:parameterized-query>
         </db:stored-procedure>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Conteo Clientes ID Inexistente">
+            <db:parameterized-query><![CDATA[select count(*) as ConteoClientes from dbo.ticketstaging
+		where IdCliente NOT IN 
+		(select IdCliente from dbo.clientes)
+		and IdEstacion=${db.station}]]></db:parameterized-query>
+        </db:select>
+        <set-variable variableName="ClientesNoExistentes" value="#[payload.get(0).ConteoClientes]" doc:name="Variable"/>
+        <choice doc:name="IF No existe ID Cliente">
+            <when expression="#[flowVars.ClientesNoExistentes&gt;=1]">
+                <db:select config-ref="Generic_Database_Configuration" doc:name="Database Folio con IDCliente Inexistente">
+                    <db:parameterized-query><![CDATA[select idfolio from dbo.ticketstaging
+		where IdCliente NOT IN 
+		(select IdCliente from dbo.clientes)
+		and IdEstacion=${db.station}]]></db:parameterized-query>
+                </db:select>
+                <logger message="Ticket con un IDCliente inexistente: #[payload]" level="INFO" doc:name="Logger correcto"/>
+            </when>
+            <otherwise>
+                <logger message="Cliente distinguido" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Conteo Empleados ID Inexistente">
+            <db:parameterized-query><![CDATA[SELECT count(*) as ConteoEmpleados FROM dbo.turnostaging
+		where idpersona NOT IN 
+		(select IdPersona from Catalogos.Personal)
+		and IdEstacion=${db.station}]]></db:parameterized-query>
+        </db:select>
+        <set-variable variableName="PersonasNoExistentes" value="#[payload.get(0).ConteoEmpleados]" doc:name="Variable Conteo Empleados"/>
+        <choice doc:name="IF No existe ID Empleado">
+            <when expression="#[flowVars.PersonasNoExistentes&gt;=1]">
+                <db:select config-ref="Generic_Database_Configuration" doc:name="Database Turno con IDPersona Inexistente">
+                    <db:parameterized-query><![CDATA[SELECT idturno FROM dbo.turnostaging
+		where idpersona NOT IN 
+		(select IdPersona from Catalogos.Personal)
+		and IdEstacion=${db.station}]]></db:parameterized-query>
+                </db:select>
+                <logger message="Turno con IDPersonal inexistente: #[payload]" level="INFO" doc:name="Logger correcto"/>
+            </when>
+            <otherwise>
+                <logger message="Empleado distinguido" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Actualizar Turnos">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_INS_TurnoStagingTurno]}]]></db:parameterized-query>
         </db:stored-procedure>
@@ -23,7 +65,9 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="Actualiza Ventas">
             <db:parameterized-query><![CDATA[{call [dbo].[sp_INS_TicketStagingTicket]}]]></db:parameterized-query>
         </db:stored-procedure>
-        <logger message="SE ACTUALIZO VENTAS VER. 2.0" level="INFO" doc:name="Actualiz&#243; ventas"/>
+        <logger message="SE ACTUALIZO VENTAS" level="INFO" doc:name="Actualiz&#243; ventas"/>
+        <logger message="Fin de proceso ingesta" level="INFO" doc:name="Logger final"/>
+
         <catch-exception-strategy doc:name="Catch Exception Strategy">
             <logger message="ERROR EN EL PROCESO DE MAESTRO" level="ERROR" doc:name="Error Logger"/>
         </catch-exception-strategy>
