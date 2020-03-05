@@ -8,8 +8,8 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
     <flow name="maestroFlow" processingStrategy="synchronous" initialState="started">
         <poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="1" timeUnit="SECONDS" startDelay="6"/>
-            <logger message="INGESTOR 3700 VER. 3.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
+            <fixed-frequency-scheduler frequency="${db.Tiempo}" timeUnit="SECONDS" startDelay="1"/>
+            <logger message="INGESTOR 3700 VER. 4.0 INICIA PROCESO MAESTRO" level="INFO" doc:name="Logger"/>
         </poll>
         <flow-ref name="TurnoFlow" doc:name="TurnoFlow"/>
         <flow-ref name="VentasFlow" doc:name="Ventas Flow"/>
