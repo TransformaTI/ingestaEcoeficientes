@@ -37,19 +37,20 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                 <set-variable variableName="Vcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable Vcontenido"/>
                 <set-variable variableName="VLongitudLayout" value=" #[flowVars.Vcontenido.length()]" doc:name="VLongitudLayout"/>
                 <logger message="========== Procesando archivo: #[flowVars.VRutaBase.ruta] LONGITUD: #[flowVars.VLongitudLayout]" level="INFO" doc:name="Procesando"/>
+                <set-variable variableName="fechaVenta" value="#[server.dateTime.format('yyyyMMddHHmm')]" doc:name="Variable fecha"/>
                 <set-variable variableName="Vfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Vfilename"/>
                 <choice doc:name="Validar layout">
                     <when expression="#[flowVars.Vcontenido.toString().length()&gt;=182]">
-                        <file:outbound-endpoint path="${db.FileCaracteres}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Caracteres Distintos"/>
-                        <logger message="El archivo #[flowVars.Vfilename] tiene longitud mayor a la esperada" level="INFO" doc:name="Logger"/>
+                        <file:outbound-endpoint path="${db.FileCaracteres}" outputPattern="#[flowVars.fechaVenta]--#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Caracteres Distintos"/>
+                        <logger message="El Ticket  #[flowVars.Vfilename] tiene longitud mayor a la esperada -------" level="INFO" doc:name="Logger"/>
 
                     </when>
                     <when expression="#[flowVars.Vcontenido.toString().length()==0]">
-                        <file:outbound-endpoint path="${db.FileVacio}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Archivo vacio"/>
+                        <file:outbound-endpoint path="${db.FileVacio}" outputPattern="#[flowVars.fechaVenta]--#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File Archivo vacio"/>
                         <logger message="----- SE ENCONTRO ARCHIVO VACIO-------- #[flowVars.Vfilename]" level="INFO" doc:name="Archivo vacio"/>
                     </when>
                     <when expression="#[flowVars.Vcontenido.toString().length()&gt;=145 &amp;&amp; flowVars.Vcontenido.toString().length()&lt;=181]">
-                        <file:outbound-endpoint path="#[flowVars.Vpath]" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
+                        <file:outbound-endpoint path="${db.FileProcesadoV}" outputPattern="#[flowVars.fechaVenta]--#[flowVars.Vfilename]" responseTimeout="10000" doc:name="File"/>
                         <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
                             <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
 (:@Contenido)}]]></db:parameterized-query>
@@ -98,8 +99,9 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                             </otherwise>
                         </choice>
                     </when>
+
                     <otherwise>
-                        <file:outbound-endpoint path="${db.FileEx}" outputPattern="#[flowVars.Vfilename]" responseTimeout="10000" doc:name="Mueve archivo defectuoso"/>
+                        <file:outbound-endpoint path="${db.FileEx}" outputPattern="#[flowVars.fechaVenta]--#[flowVars.Vfilename]" responseTimeout="10000" doc:name="Mueve archivo defectuoso"/>
                         <logger message="LAYOUT INCORRECTO ARCHIVO : #[flowVars.Vfilename]" level="ERROR" doc:name="Error LayoutVtas"/>
                     </otherwise>
                 </choice>

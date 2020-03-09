@@ -9,9 +9,10 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:sqlserver://${db.server}:${db.port};databaseName=${db.databasename}; user=${db.username};password=${db.password}" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver" doc:name="Generic Database Configuration">
-        <reconnect-forever frequency="30000"/>
+        <reconnect/>
+
     </db:generic-config>
-    <flow name="TurnoFlow" initialState="started">
+     <flow name="TurnoFlow" initialState="started">
         <logger message="~~~~~~~~~~INICIO FLUJO TURNO~~~~~~~~~~" level="INFO" doc:name="Inicia flujo"/>
         <db:select config-ref="Generic_Database_Configuration" doc:name="Bomba parametro">
             <db:parameterized-query><![CDATA[SELECT
@@ -37,7 +38,10 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                 <set-variable variableName="Tcontenido" value="#[message.payloadAs(java.lang.String).toString()]" doc:name="Variable Tcontenido"/>
                 <logger message="========== Procesando archivo: #[flowVars.TRutaBase.ruta] Longitud: #[flowVars.Tcontenido.length()]" level="INFO" doc:name="Procesando archivo"/>
                 <set-variable variableName="Tfilename" value="#[message.inboundProperties.originalFilename]" doc:name="Variable Tfilename"/>
-                <file:outbound-endpoint path="#[flowVars.Tpath]" outputPattern="#[flowVars.Tfilename]" responseTimeout="10000" doc:name="File"/>
+                <set-variable variableName="fechaTurno" value="#[server.dateTime.format('yyyyMMddHHmm')]" doc:name="Variable Fecha"/>
+                <logger message="LA FECHA ES : #[flowVars.fecha]" level="INFO" doc:name="Logger"/>
+                <file:outbound-endpoint path="${db.FileProcesadoT}" outputPattern="#[flowVars.fechaTurno]--#[flowVars.Tfilename] " responseTimeout="10000" doc:name="File Other Name"/>
+
                 <db:stored-procedure config-ref="Generic_Database_Configuration" doc:name="sp_buscar_archivohash">
                     <db:parameterized-query><![CDATA[{call dbo.sp_buscar_archivohash
 (:@Contenido)}]]></db:parameterized-query>
@@ -91,7 +95,11 @@ http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema
                             <db:in-param name="@Nombre" value="#[flowVars.Tfilename.toString()]"/>
 
                         </db:stored-procedure>
+
                         <logger message="========== Archivo procesado: #[message.inboundProperties.originalFilename]" level="INFO" doc:name="Archivo procesado"/>
+                        <logger message="archivo movido" level="INFO" doc:name="Logger"/>
+                        
+						
                     </when>
                     <otherwise>
                         <logger message="EXISTE LA HUELLA TURNOS" level="INFO" doc:name="Huella existe"/>
